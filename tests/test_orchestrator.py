@@ -29,12 +29,13 @@ class FakePageClient:
     def upsert_target_page(
         self,
         *,
+        shelf_name: str,
         book_name: str,
         chapter_name: str | None,
         page_name: str,
         markdown: str,
     ) -> dict:
-        key = (book_name, chapter_name, page_name)
+        key = (shelf_name, book_name, chapter_name, page_name)
         if key not in self.target_map:
             self.target_map[key] = {"id": len(self.target_map) + 900, "name": page_name}
         return self.target_map[key]
@@ -45,22 +46,24 @@ class FakePageClient:
 
 def test_parse_config_markdown_supports_book_and_chapter_targets() -> None:
     markdown = """
-# Book A.Page A
+# Shelf A.Book A.Page A
 A body
 
-# Book B.Chapter B.Page B
+# Shelf B.Book B.Chapter B.Page B
 B body
 """.strip()
 
     rules = parse_config_markdown(markdown)
 
     assert len(rules) == 2
-    assert (rules[0].book_name, rules[0].chapter_name, rules[0].page_name) == (
+    assert (rules[0].shelf_name, rules[0].book_name, rules[0].chapter_name, rules[0].page_name) == (
+        "Shelf A",
         "Book A",
         None,
         "Page A",
     )
-    assert (rules[1].book_name, rules[1].chapter_name, rules[1].page_name) == (
+    assert (rules[1].shelf_name, rules[1].book_name, rules[1].chapter_name, rules[1].page_name) == (
+        "Shelf B",
         "Book B",
         "Chapter B",
         "Page B",
@@ -82,7 +85,7 @@ def test_render_template_replaces_internal_links_with_page_markdown() -> None:
 
 def test_ignores_unsupported_event() -> None:
     orchestrator = PageOrchestrator(
-        FakePageClient(config_page={"id": 1, "markdown": "# A.B\nX"}, pages={}),
+        FakePageClient(config_page={"id": 1, "markdown": "# A.B.C\nX"}, pages={}),
         config_book_name="Config Book",
         config_page_name="Config",
     )
@@ -97,7 +100,7 @@ def test_ignores_unsupported_event() -> None:
 def test_initialize_creates_updates_from_config_rules() -> None:
     config = {
         "id": 5,
-        "markdown": "# Book.Target\n[A](/pages/10)\n\n---\n\n[B](/pages/11)",
+        "markdown": "# Shelf.Book.Target\n[A](/pages/10)\n\n---\n\n[B](/pages/11)",
     }
     client = FakePageClient(config_page=config, pages={10: "Alpha", 11: "Beta"})
     client.link_map = {"/pages/10": {"id": 10}, "/pages/11": {"id": 11}}
@@ -114,11 +117,11 @@ def test_initialize_creates_updates_from_config_rules() -> None:
 def test_webhook_skips_when_changed_page_is_target_page() -> None:
     config = {
         "id": 5,
-        "markdown": "# Book.Target\n[A](/pages/10)",
+        "markdown": "# Shelf.Book.Target\n[A](/pages/10)",
     }
     client = FakePageClient(config_page=config, pages={10: "Alpha"})
     client.link_map = {"/pages/10": {"id": 10}}
-    client.target_map = {("Book", None, "Target"): {"id": 900, "name": "Target"}}
+    client.target_map = {("Shelf", "Book", None, "Target"): {"id": 900, "name": "Target"}}
     orchestrator = PageOrchestrator(client, config_book_name="Config Book", config_page_name="Config")
 
     result = orchestrator.process_webhook({"event": "page_update", "page_id": 900})
@@ -130,7 +133,7 @@ def test_webhook_skips_when_changed_page_is_target_page() -> None:
 def test_webhook_updates_when_changed_page_is_source_page() -> None:
     config = {
         "id": 5,
-        "markdown": "# Book.Target\n[A](/pages/10)",
+        "markdown": "# Shelf.Book.Target\n[A](/pages/10)",
     }
     client = FakePageClient(config_page=config, pages={10: "Alpha"})
     client.link_map = {"/pages/10": {"id": 10}}

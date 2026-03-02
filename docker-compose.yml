@@ -37,6 +37,7 @@ services:
     restart: unless-stopped
 
   orchestrator:
+    # image: lukasjaspaert/bookstack-page-orchestrator:latest
     build:
       context: .
       dockerfile: Dockerfile

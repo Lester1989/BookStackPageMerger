@@ -25,6 +25,7 @@ class PageClient(Protocol):
     def upsert_target_page(
         self,
         *,
+        shelf_name: str,
         book_name: str,
         chapter_name: str | None,
         page_name: str,
@@ -399,12 +400,20 @@ class BookstackPageClient:
     def upsert_target_page(
         self,
         *,
+        shelf_name: str,
         book_name: str,
         chapter_name: str | None,
         page_name: str,
         markdown: str,
     ) -> dict:
         book = self._ensure_book(book_name)
+
+        shelf = self._ensure_shelf(shelf_name)
+        self._ensure_book_in_shelf(
+            shelf_id=int(shelf["id"]),
+            shelf_name=shelf_name,
+            book_id=int(book["id"]),
+        )
 
         book_id = int(book["id"])
 

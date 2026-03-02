@@ -22,6 +22,7 @@ class OrchestrationResult:
 
 @dataclass(frozen=True)
 class ConfigRule:
+    shelf_name: str
     book_name: str
     chapter_name: str | None
     page_name: str
@@ -43,6 +44,7 @@ class CompiledTemplate:
 
 @dataclass(frozen=True)
 class CompiledRule:
+    shelf_name: str
     book_name: str
     chapter_name: str | None
     page_name: str
@@ -74,14 +76,16 @@ def _extract_changed_page_id(payload: dict[str, Any]) -> int | None:
     return None
 
 
-def _parse_heading_target(heading_text: str) -> tuple[str, str | None, str]:
+def _parse_heading_target(heading_text: str) -> tuple[str, str, str | None, str]:
     parts = [part.strip() for part in heading_text.split(".") if part.strip()]
-    if len(parts) == 2:
-        return parts[0], None, parts[1]
     if len(parts) == 3:
-        return parts[0], parts[1], parts[2]
+        return parts[0], parts[1], None, parts[2]
+    if len(parts) == 4:
+        return parts[0], parts[1], parts[2], parts[3]
 
-    raise ValueError("Heading must be '<book>.<page>' or '<book>.<chapter>.<page>'")
+    raise ValueError(
+        "Heading must be '<shelf>.<book>.<page>' or '<shelf>.<book>.<chapter>.<page>'"
+    )
 
 
 def parse_config_markdown(markdown: str) -> list[ConfigRule]:
@@ -97,13 +101,14 @@ def parse_config_markdown(markdown: str) -> list[ConfigRule]:
             continue
 
         try:
-            book_name, chapter_name, page_name = _parse_heading_target(heading_text)
+            shelf_name, book_name, chapter_name, page_name = _parse_heading_target(heading_text)
         except ValueError:
             logger.warning("Ignoring invalid config heading", extra={"heading_text": heading_text})
             continue
 
         rules.append(
             ConfigRule(
+                shelf_name=shelf_name,
                 book_name=book_name,
                 chapter_name=chapter_name,
                 page_name=page_name,
@@ -212,6 +217,7 @@ class PageOrchestrator:
             source_id_set = {page_id for page_id in compiled_template.source_page_ids if page_id is not None}
             compiled_rules.append(
                 CompiledRule(
+                    shelf_name=rule.shelf_name,
                     book_name=rule.book_name,
                     chapter_name=rule.chapter_name,
                     page_name=rule.page_name,
@@ -263,6 +269,7 @@ class PageOrchestrator:
         for rule in candidate_rules:
             rendered = _render_compiled_template(rule.compiled_template, self._page_client)
             target_page = self._page_client.upsert_target_page(
+                shelf_name=rule.shelf_name,
                 book_name=rule.book_name,
                 chapter_name=rule.chapter_name,
                 page_name=rule.page_name,
