@@ -46,7 +46,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/de/18/7c4ea915b475d9cd3
 
 [[package]]
 name = "bookstack-page-orchestrator"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "bookstack" },
