@@ -1,6 +1,6 @@
 [project]
 name = "bookstack-page-orchestrator"
-version = "0.1.1"
+version = "0.1.2"
 description = "FastAPI sidecar service that merges BookStack pages via webhook triggers"
 readme = "README.md"
 requires-python = ">=3.11"
