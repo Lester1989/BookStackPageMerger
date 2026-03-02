@@ -1,0 +1,93 @@
+# Bookstack Page Orchestrator
+
+FastAPI sidecar service that listens for BookStack webhook page events and builds target pages from a markdown config page.
+
+## Why not use BookStack's built-in page Reuse feature?
+
+[BookStack Docu](https://www.bookstackapp.com/docs/user/reusing-page-content/) has a buildin Feature to reuse page content by including `{{@page_id}}` in the markdown. However, it has one (for my usecase) critical limitation:
+- it replaces the include tag with the content but cannot export the included page as markdown for editing in the target page. 
+- So if I want to transfer the pages content with formatting, it is not possible with that feature.
+
+## Requirements
+
+- Python 3.11+
+- [uv](https://docs.astral.sh/uv/)
+
+## Setup
+
+```bash
+uv sync --dev
+```
+
+## Configuration
+
+Set these environment variables:
+
+- `BOOKSTACK_URL`: BookStack base URL.
+- `BOOKSTACK_TOKEN_ID`: API token id.
+- `BOOKSTACK_TOKEN_SECRET`: API token secret.
+- `CONFIG_PAGE_NAME`: Name of the BookStack page containing orchestration config.
+- `PAGE_RECIPES`: Optional legacy mapping, kept for backward compatibility.
+
+Example:
+
+Config page format:
+
+```markdown
+# Book Name.Target Page Name
+[Source A](/pages/123)
+
+# Book Name.Chapter Name.Target Page Name
+[Source B](/pages/124)
+```
+
+Each `#` heading defines one target. The heading is split by `.` into either:
+- `<book>.<page>`
+- `<book>.<chapter>.<page>`
+
+Everything under the heading up to the next `#` is the template markdown for that target page.
+Internal links are expanded by replacing the link with the linked page markdown.
+
+## Run
+
+```bash
+uv run uvicorn bookstack_page_orchestrator.main:app --host 0.0.0.0 --port 8000
+```
+
+## Webhook
+
+- Endpoint: `POST /webhook`
+- Supported events: `page_update`, `page_create`
+- Changed page id is read from `page_id`, `id`, `data.id`, or `related_item.id`.
+- On startup and on `page_update`/`page_create`, the service loads the config page and applies matching rules.
+- If the config page does not exist, it is auto-created with a working example including two source pages.
+- Loop prevention skips updates when the changed page is the resolved target page.
+
+### Configure BookStack Webhook
+
+Use these steps in BookStack UI:
+
+1. Open **Settings** → **Webhooks** (admin account).
+2. Create a new webhook.
+3. Set the target URL:
+	- If BookStack runs in the same `docker compose` network as this app: `http://orchestrator:8000/webhook`
+	- If sending from outside Docker host: `http://localhost:8000/webhook`
+4. Enable these events:
+	- `page_create`
+	- `page_update`
+5. Save the webhook.
+
+Notes:
+- This service currently does not validate webhook signatures/secrets, so URL reachability and event selection are the critical parts.
+- A quick verification is to edit any page in BookStack and check orchestrator logs for `Background webhook processing finished`.
+
+## Tests
+
+```bash
+uv run pytest
+```
+
+## AI Disclaimer
+
+Parts of this project were developed with AI assistance.
+All generated code and documentation should be reviewed and validated by a human before production use.

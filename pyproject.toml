@@ -1,0 +1,25 @@
+[project]
+name = "bookstack-page-orchestrator"
+version = "0.1.0"
+description = "FastAPI sidecar service that merges BookStack pages via webhook triggers"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.116.0",
+    "uvicorn[standard]>=0.35.0",
+    "bookstack>=0.2.0.post1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.0",
+    "httpx>=0.28.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"

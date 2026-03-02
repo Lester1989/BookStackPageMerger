@@ -1,0 +1,60 @@
+services:
+  bookstack-db:
+    image: lscr.io/linuxserver/mariadb:latest
+    container_name: bookstack-db
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - bookstack_db_data:/config
+    restart: unless-stopped
+
+  bookstack:
+    image: lscr.io/linuxserver/bookstack:latest
+    container_name: bookstack
+    depends_on:
+      - bookstack-db
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+      - APP_URL=${BOOKSTACK_APP_URL}
+      - APP_KEY=${BOOKSTACK_APP_KEY}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "6875:80"
+    volumes:
+      - bookstack_app_data:/config
+    restart: unless-stopped
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bookstack-page-orchestrator
+    depends_on:
+      - bookstack
+    environment:
+      - BOOKSTACK_URL=${BOOKSTACK_URL}
+      - BOOKSTACK_TOKEN_ID=${BOOKSTACK_TOKEN_ID}
+      - BOOKSTACK_TOKEN_SECRET=${BOOKSTACK_TOKEN_SECRET}
+      - CONFIG_BOOK_NAME=${CONFIG_BOOK_NAME}
+      - CONFIG_PAGE_NAME=${CONFIG_PAGE_NAME}
+      - PAGE_RECIPES=${PAGE_RECIPES}
+      - LOG_LEVEL=${LOG_LEVEL}
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+volumes:
+  bookstack_db_data:
+  bookstack_app_data:
