@@ -89,10 +89,14 @@ class BookstackPageClient:
 
     def _find_page_by_name(self, page_name: str) -> dict | None:
         page_name_cf = page_name.casefold()
-        for page in self._list_all("/api/pages"):
-            if str(page.get("name", "")).casefold() == page_name_cf:
-                return self._get_page(int(page["id"]))
-        return None
+        return next(
+            (
+                self._get_page(int(page["id"]))
+                for page in self._list_all("/api/pages")
+                if str(page.get("name", "")).casefold() == page_name_cf
+            ),
+            None,
+        )
 
     def _ensure_book(self, book_name: str) -> dict:
         logger.debug("Ensuring book exists", extra={"book_name": book_name})
@@ -107,10 +111,14 @@ class BookstackPageClient:
 
     def _find_shelf_by_name(self, shelf_name: str) -> dict | None:
         shelf_name_cf = shelf_name.casefold()
-        for shelf in self._list_all("/api/shelves"):
-            if str(shelf.get("name", "")).casefold() == shelf_name_cf:
-                return shelf
-        return None
+        return next(
+            (
+                shelf
+                for shelf in self._list_all("/api/shelves")
+                if str(shelf.get("name", "")).casefold() == shelf_name_cf
+            ),
+            None,
+        )
 
     def _create_shelf(self, shelf_name: str) -> dict:
         payload = self._request("POST", "/api/shelves", json={"name": shelf_name, "description": ""})
@@ -222,10 +230,14 @@ class BookstackPageClient:
 
     def _find_book_by_name(self, book_name: str) -> dict | None:
         book_name_cf = book_name.casefold()
-        for book in self._list_all("/api/books"):
-            if str(book.get("name", "")).casefold() == book_name_cf:
-                return book
-        return None
+        return next(
+            (
+                book
+                for book in self._list_all("/api/books")
+                if str(book.get("name", "")).casefold() == book_name_cf
+            ),
+            None,
+        )
 
     def _find_chapter_by_name(self, *, book_id: int, chapter_name: str) -> dict | None:
         chapter_name_cf = chapter_name.casefold()
@@ -293,15 +305,13 @@ class BookstackPageClient:
         return created
 
     def _extract_page_id_from_link(self, link: str) -> int | None:
-        match = re.search(r"/pages/(\d+)", link)
-        if match:
-            return int(match.group(1))
+        if match := re.search(r"/link/(\d+)", link):
+            return int(match[1])
 
         parsed = urlparse(link)
         if parsed.path:
-            match = re.search(r"/pages/(\d+)", parsed.path)
-            if match:
-                return int(match.group(1))
+            if match := re.search(r"/link/(\d+)", parsed.path):
+                return int(match[1])
         return None
 
     def get_page_markdown(self, page_id: int) -> str:
@@ -363,13 +373,13 @@ class BookstackPageClient:
         target_bc_name = f"orchestration_example_{random_suffix}_bc"
         config_markdown = (
             f"# {config_book_name}.{target_ac_name}\n\n"
-            f"[Source A](/pages/{source_a_page['id']})\n\n"
+            f"[Source A](/link/{source_a_page['id']})\n\n"
             f"---\n\n"
-            f"[Source C](/pages/{source_c_page['id']})\n\n"
+            f"[Source C](/link/{source_c_page['id']})\n\n"
             f"# {config_book_name}.{target_bc_name}\n\n"
-            f"[Source B](/pages/{source_b_page['id']})\n\n"
+            f"[Source B](/link/{source_b_page['id']})\n\n"
             f"---\n\n"
-            f"[Source C](/pages/{source_c_page['id']})\n"
+            f"[Source C](/link/{source_c_page['id']})\n"
         )
 
         config_page = self._create_page(name=config_page_name, markdown=config_markdown, book_id=book_id)

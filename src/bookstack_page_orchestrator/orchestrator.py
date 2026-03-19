@@ -55,10 +55,9 @@ class CompiledRule:
 def _extract_changed_page_id(payload: dict[str, Any]) -> int | None:
     candidates: list[Any] = []
 
-    for key in ("page_id", "id"):
-        if key in payload:
-            candidates.append(payload.get(key))
-
+    candidates.extend(
+        payload.get(key) for key in ("page_id", "id") if key in payload
+    )
     data = payload.get("data")
     if isinstance(data, dict) and "id" in data:
         candidates.append(data.get("id"))
