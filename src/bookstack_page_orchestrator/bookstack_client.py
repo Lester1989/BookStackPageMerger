@@ -372,11 +372,11 @@ class BookstackPageClient:
         target_ac_name = f"orchestration_example_{random_suffix}_ac"
         target_bc_name = f"orchestration_example_{random_suffix}_bc"
         config_markdown = (
-            f"# {config_book_name}.{target_ac_name}\n\n"
+            f"# {CONFIG_SHELF_NAME}.{config_book_name}.{target_ac_name}\n\n"
             f"[Source A](/link/{source_a_page['id']})\n\n"
             f"---\n\n"
             f"[Source C](/link/{source_c_page['id']})\n\n"
-            f"# {config_book_name}.{target_bc_name}\n\n"
+            f"# {CONFIG_SHELF_NAME}.{config_book_name}.{target_bc_name}\n\n"
             f"[Source B](/link/{source_b_page['id']})\n\n"
             f"---\n\n"
             f"[Source C](/link/{source_c_page['id']})\n"

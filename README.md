@@ -35,10 +35,10 @@ Config page format:
 
 ```markdown
 # Book Name.Target Page Name
-[Source A](/pages/123)
+[Source A](/link/123)
 
 # Book Name.Chapter Name.Target Page Name
-[Source B](/pages/124)
+[Source B](/link/124)
 ```
 
 Each `#` heading defines one target. The heading is split by `.` into either:

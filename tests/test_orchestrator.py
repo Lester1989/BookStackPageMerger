@@ -73,11 +73,11 @@ B body
 def test_render_template_replaces_internal_links_with_page_markdown() -> None:
     client = FakePageClient(config_page={"id": 1, "markdown": ""}, pages={10: "Source One", 11: "Source Two"})
     client.link_map = {
-        "/pages/10": {"id": 10},
-        "/pages/11": {"id": 11},
+        "/link/10": {"id": 10},
+        "/link/11": {"id": 11},
     }
 
-    rendered = render_template("Before [A](/pages/10) middle [B](/pages/11) after", client)
+    rendered = render_template("Before [A](/link/10) middle [B](/link/11) after", client)
 
     assert rendered.markdown == "Before Source One middle Source Two after"
     assert rendered.source_page_ids == {10, 11}
@@ -100,10 +100,10 @@ def test_ignores_unsupported_event() -> None:
 def test_initialize_creates_updates_from_config_rules() -> None:
     config = {
         "id": 5,
-        "markdown": "# Shelf.Book.Target\n[A](/pages/10)\n\n---\n\n[B](/pages/11)",
+        "markdown": "# Shelf.Book.Target\n[A](/link/10)\n\n---\n\n[B](/link/11)",
     }
     client = FakePageClient(config_page=config, pages={10: "Alpha", 11: "Beta"})
-    client.link_map = {"/pages/10": {"id": 10}, "/pages/11": {"id": 11}}
+    client.link_map = {"/link/10": {"id": 10}, "/link/11": {"id": 11}}
 
     orchestrator = PageOrchestrator(client, config_book_name="Config Book", config_page_name="Config")
 
@@ -117,10 +117,10 @@ def test_initialize_creates_updates_from_config_rules() -> None:
 def test_webhook_skips_when_changed_page_is_target_page() -> None:
     config = {
         "id": 5,
-        "markdown": "# Shelf.Book.Target\n[A](/pages/10)",
+        "markdown": "# Shelf.Book.Target\n[A](/link/10)",
     }
     client = FakePageClient(config_page=config, pages={10: "Alpha"})
-    client.link_map = {"/pages/10": {"id": 10}}
+    client.link_map = {"/link/10": {"id": 10}}
     client.target_map = {("Shelf", "Book", None, "Target"): {"id": 900, "name": "Target"}}
     orchestrator = PageOrchestrator(client, config_book_name="Config Book", config_page_name="Config")
 
@@ -133,10 +133,10 @@ def test_webhook_skips_when_changed_page_is_target_page() -> None:
 def test_webhook_updates_when_changed_page_is_source_page() -> None:
     config = {
         "id": 5,
-        "markdown": "# Shelf.Book.Target\n[A](/pages/10)",
+        "markdown": "# Shelf.Book.Target\n[A](/link/10)",
     }
     client = FakePageClient(config_page=config, pages={10: "Alpha"})
-    client.link_map = {"/pages/10": {"id": 10}}
+    client.link_map = {"/link/10": {"id": 10}}
     orchestrator = PageOrchestrator(client, config_book_name="Config Book", config_page_name="Config")
 
     result = orchestrator.process_webhook({"event": "page_update", "related_item": {"id": 10}})
