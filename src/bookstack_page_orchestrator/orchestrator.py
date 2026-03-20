@@ -101,8 +101,8 @@ def parse_config_markdown(markdown: str) -> list[ConfigRule]:
 
         try:
             shelf_name, book_name, chapter_name, page_name = _parse_heading_target(heading_text)
-        except ValueError:
-            logger.warning("Ignoring invalid config heading", extra={"heading_text": heading_text})
+        except ValueError as val_exc:
+            logger.warning("Ignoring invalid config heading", extra={"heading_text": heading_text, "exception": val_exc})
             continue
 
         rules.append(
